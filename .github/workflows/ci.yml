@@ -6,8 +6,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -18,12 +18,18 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build image
         run: docker build -t site-thumbnailer:ci .
       - name: Smoke test container
         run: |
-          docker run -d --name t -p 3000:3000 --init --shm-size=1g site-thumbnailer:ci
-          for i in $(seq 1 30); do curl -fs localhost:3000/healthz && break; sleep 1; done
+          docker run -d --name thumb-smoke -p 3000:3000 --init --shm-size=1g site-thumbnailer:ci
+          for i in $(seq 1 30); do
+            if curl -fs localhost:3000/healthz; then echo; echo "healthy after ${i}s"; break; fi
+            if [ "$i" -eq 30 ]; then echo "never became healthy"; docker logs thumb-smoke; exit 1; fi
+            sleep 1
+          done
           curl -fs localhost:3000/api/config
-          docker rm -f t
+      - name: Clean up
+        if: always()
+        run: docker rm -f thumb-smoke || true
