@@ -11,6 +11,8 @@ Records live in `data/sites.json` and images in `data/thumbnails/`. There's no d
 
 ## Running it on a Mac
 
+> **New Mac or first time?** Follow [docs/MAC_SETUP.md](docs/MAC_SETUP.md). It covers Homebrew, cloning, Docker runtimes, Claude Code and troubleshooting.
+
 ### Option A: Docker (recommended, nothing else to install)
 
 You need a Docker runtime: [Docker Desktop](https://www.docker.com/products/docker-desktop/), [OrbStack](https://orbstack.dev) (lighter, and nice on Apple Silicon) or `brew install colima docker docker-compose && colima start`.
