@@ -18,8 +18,7 @@ gh auth login            # follow the prompts; choose HTTPS + browser login
 ```bash
 mkdir -p ~/code && cd ~/code
 gh repo clone dpreschel/Thumbnail
-cd Thumbnail
-git checkout claude/admiring-ptolemy-angduw   # or `main`, once this branch is merged
+cd Thumbnail             # you're on `main`
 ```
 
 ## 3a. Run with Docker (recommended)

@@ -6,7 +6,7 @@ Context for Claude Code sessions in this repo.
 
 **Site Thumbnailer**: a proof of concept for a larger project. A user enters a URL. The app records the page's title, description and canonical URL, and saves a screenshot thumbnail in several sizes. There is deliberately no database.
 
-Status: v0.2 is working. It has browser capture, a metadata-only fallback, configurable thumbnail sizes, Docker and CI. Development happens on branch `claude/admiring-ptolemy-angduw` (not yet merged to `main`).
+Status: v0.2 is working. It has browser capture, a metadata-only fallback, configurable thumbnail sizes, Docker and CI. `main` is the primary branch; use feature branches + PRs for new work.
 
 ## Commands
 
