@@ -50,10 +50,14 @@ Record shape: `{ id, inputUrl, url, finalUrl, title, description, siteName, http
 - Thumbnail size names must match `^[a-z][a-z0-9]{0,15}$`; they become file names and URLs.
 - `data/` is runtime state and is git-ignored. Never commit it.
 
-## Roadmap (next steps, rough priority)
+## Roadmap
 
-1. Rate limiting + auth (each capture launches a browser context)
-2. Job queue with a concurrency cap (e.g. BullMQ); POST → 202, UI polls
+**Decision (2026-11-11): this stays a single-user POC** that may later be folded into a larger project. Keep it simple: don't add auth, a job queue or other multi-user infrastructure unless the owner asks. Prefer changes that keep the modules easy to lift into another codebase (small, dependency-injected, no framework lock-in).
+
+If it graduates, the rough order is:
+
+1. Rate limiting + auth (once anyone besides the owner can reach it)
+2. Job queue with a concurrency cap (e.g. BullMQ); POST → 202, UI polls (deferred: not needed for single-user use)
 3. Run capture on an isolated network to close the DNS-rebinding window
 4. Real DB (SQLite/Postgres) + object storage for images
 5. Scheduled re-capture; structured logs and metrics; ESLint + Prettier in CI
