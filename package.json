@@ -1,0 +1,29 @@
+{
+  "name": "site-thumbnailer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "POC: capture a website's title, description, canonical URL and a screenshot thumbnail.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "browsers": "playwright install chromium"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "express": "^4.22.3",
+    "ipaddr.js": "^2.5.0",
+    "playwright": "^1.63.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site Thumbnailer</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Site Thumbnailer</h1>
+    <p class="sub">Enter a website to grab its title, description, URL and a snapshot.</p>
+    <form id="capture-form" autocomplete="off">
+      <input id="url" name="url" type="text" inputmode="url" placeholder="example.com" required aria-label="Website URL">
+      <button type="submit" id="submit">Capture</button>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+  </header>
+  <main>
+    <p id="empty" hidden>No sites captured yet. Try one above.</p>
+    <ul id="sites"></ul>
+  </main>
+  <template id="card-tpl">
+    <li class="card">
+      <a class="thumb-link" target="_blank" rel="noopener noreferrer"><img class="thumb" alt="" loading="lazy"></a>
+      <div class="body">
+        <h2 class="title"></h2>
+        <p class="site-name"></p>
+        <p class="desc"></p>
+        <a class="url" target="_blank" rel="noopener noreferrer"></a>
+        <div class="meta">
+          <time class="when"></time>
+          <span class="actions">
+            <button type="button" class="refresh">Refresh</button>
+            <button type="button" class="delete">Delete</button>
+          </span>
+        </div>
+      </div>
+    </li>
+  </template>
+</body>
+</html>
