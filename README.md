@@ -118,3 +118,7 @@ You're letting users make your server open arbitrary URLs, which is a textbook S
 - A job queue with a concurrency cap, so captures don't hold HTTP requests open
 - A real database and object storage (S3 etc.)
 - Run the browser on its own isolated network. Even with the IP checks, a short DNS-rebinding window between our lookup and the actual connection is possible.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
