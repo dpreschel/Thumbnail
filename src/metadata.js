@@ -52,5 +52,10 @@ export function extractMetadata(html, pageUrl) {
 
   const siteName = clean(meta('meta[property="og:site_name"]'), MAX_TITLE);
 
-  return { title: title ?? new URL(pageUrl).hostname, description, url, siteName };
+  const image =
+    resolveHttpUrl(meta('meta[property="og:image"]'), pageUrl) ||
+    resolveHttpUrl(meta('meta[property="og:image:url"]'), pageUrl) ||
+    resolveHttpUrl(meta('meta[name="twitter:image"]'), pageUrl);
+
+  return { title: title ?? new URL(pageUrl).hostname, description, url, siteName, image };
 }

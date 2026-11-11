@@ -2,12 +2,13 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeUrl, UrlError } from './urlGuard.js';
+import { makeThumbnails, DEFAULT_SIZES } from './thumbnails.js';
 
 const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 /** Build the Express app. Dependencies are injected so tests can fake the browser. */
-export function createApp({ store, capturer }) {
+export function createApp({ store, capturer, sizes = DEFAULT_SIZES, logger = console }) {
   const app = express();
   app.disable('x-powered-by');
 
@@ -22,6 +23,10 @@ export function createApp({ store, capturer }) {
   });
   app.use(express.json({ limit: '10kb' }));
 
+  app.get('/healthz', (req, res) => res.json({ ok: true }));
+
+  app.get('/api/config', (req, res) => res.json({ thumbnailSizes: sizes }));
+
   app.get('/api/sites', async (req, res) => {
     res.json(await store.list());
   });
@@ -30,6 +35,17 @@ export function createApp({ store, capturer }) {
     try {
       const inputUrl = normalizeUrl(req.body?.url);
       const result = await capturer.capture(inputUrl);
+
+      let images = null;
+      if (result.image) {
+        try {
+          images = await makeThumbnails(result.image, sizes);
+        } catch (err) {
+          // e.g. a corrupt og:image — keep the metadata, just no picture
+          logger.warn?.(`Could not build thumbnails for ${inputUrl}: ${err.message}`);
+        }
+      }
+
       const { record, created } = await store.upsert({
         inputUrl,
         url: result.url,
@@ -38,7 +54,9 @@ export function createApp({ store, capturer }) {
         description: result.description,
         siteName: result.siteName,
         httpStatus: result.httpStatus,
-        screenshot: result.screenshot,
+        captureMode: result.captureMode ?? 'browser',
+        fallbackReason: result.fallbackReason ?? null,
+        images,
       });
       res.status(created ? 201 : 200).json(record);
     } catch (err) {
@@ -62,12 +80,12 @@ export function createApp({ store, capturer }) {
     if (err.status >= 400 && err.status < 500) {
       return res.status(err.status).json({ error: err.status === 404 ? 'Not found' : 'Bad request' });
     }
-    // Playwright navigation errors are the site's fault, not ours -> 502.
+    // Navigation / fetch failures are the site's fault, not ours -> 502.
     const msg = String(err.message || err);
-    if (/net::|Timeout|NS_ERROR|No response/i.test(msg)) {
+    if (err.name === 'FetchError' || /net::|Timeout|NS_ERROR|No response|fetch failed|aborted/i.test(msg)) {
       return res.status(502).json({ error: `Could not load that site: ${msg.split('\n')[0]}` });
     }
-    console.error(err);
+    logger.error?.(err);
     return res.status(500).json({ error: 'Something went wrong.' });
   });
 

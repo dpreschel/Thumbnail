@@ -54,7 +54,7 @@ export function createCapturer({ allowPrivateHosts = false, launchOptions = {} }
 
       const finalUrl = page.url();
       const html = await page.content();
-      const screenshot = await page.screenshot({ type: 'jpeg', quality: 70 });
+      const screenshot = await page.screenshot({ type: 'png' }) // lossless; resized to JPEG later;
 
       return {
         ...extractMetadata(html, finalUrl),

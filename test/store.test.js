@@ -8,29 +8,47 @@ let dir;
 beforeEach(async () => { dir = await fs.mkdtemp(path.join(os.tmpdir(), 'thumb-store-')); });
 afterEach(async () => { await fs.rm(dir, { recursive: true, force: true }); });
 
-const site = (url, extra = {}) => ({ url, title: 'T', screenshot: Buffer.from('jpg'), ...extra });
+const images = { small: Buffer.from('s'), large: Buffer.from('L') };
+const site = (url, extra = {}) => ({ url, title: 'T', images, ...extra });
+const thumbFiles = () => fs.readdir(path.join(dir, 'thumbnails'));
 
 describe('store', () => {
-  it('starts empty and persists records + thumbnails to disk', async () => {
+  it('starts empty and persists records + one file per thumbnail size', async () => {
     const store = createStore(dir);
     expect(await store.list()).toEqual([]);
     const { record, created } = await store.upsert(site('https://a.test/'));
     expect(created).toBe(true);
-    expect(record.thumbnail).toBe(`/thumbnails/${record.id}.jpg`);
-    expect(await fs.readFile(path.join(dir, 'thumbnails', `${record.id}.jpg`), 'utf8')).toBe('jpg');
+    expect(record.thumbnails).toEqual({
+      small: `/thumbnails/${record.id}-small.jpg`,
+      large: `/thumbnails/${record.id}-large.jpg`,
+    });
+    expect(await fs.readFile(path.join(dir, 'thumbnails', `${record.id}-large.jpg`), 'utf8')).toBe('L');
 
     const reopened = createStore(dir);
     expect(await reopened.get(record.id)).toMatchObject({ url: 'https://a.test/', title: 'T' });
   });
 
-  it('updates in place when the same canonical URL is captured again', async () => {
+  it('updates in place on re-capture and drops stale thumbnail files', async () => {
     const store = createStore(dir);
     const first = await store.upsert(site('https://a.test/'));
-    const second = await store.upsert(site('https://a.test/', { title: 'New' }));
+    const second = await store.upsert(site('https://a.test/', { title: 'New', images: { medium: Buffer.from('m') } }));
     expect(second.created).toBe(false);
     expect(second.record.id).toBe(first.record.id);
     expect(await store.list()).toHaveLength(1);
     expect((await store.list())[0].title).toBe('New');
+    expect(await thumbFiles()).toEqual([`${first.record.id}-medium.jpg`]);
+  });
+
+  it('stores records with no image (fallback capture) as thumbnails: null', async () => {
+    const store = createStore(dir);
+    const { record } = await store.upsert(site('https://a.test/', { images: null }));
+    expect(record.thumbnails).toBeNull();
+    expect(await thumbFiles()).toEqual([]);
+  });
+
+  it('rejects unsafe size names', async () => {
+    await expect(createStore(dir).upsert(site('https://a.test/', { images: { '../x': Buffer.from('') } })))
+      .rejects.toThrow(/size name/);
   });
 
   it('handles concurrent writes without losing records', async () => {
@@ -45,6 +63,6 @@ describe('store', () => {
     expect(await store.remove(record.id)).toBe(true);
     expect(await store.remove(record.id)).toBe(false);
     expect(await store.list()).toEqual([]);
-    await expect(fs.access(path.join(dir, 'thumbnails', `${record.id}.jpg`))).rejects.toThrow();
+    expect(await thumbFiles()).toEqual([]);
   });
 });

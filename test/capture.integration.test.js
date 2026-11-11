@@ -29,13 +29,13 @@ afterAll(async () => {
 });
 
 describe('capture (real browser)', () => {
-  it('follows redirects, reads rendered metadata, and returns a JPEG', async () => {
+  it('follows redirects, reads rendered metadata, and returns a PNG screenshot', async () => {
     const result = await capturer.capture(`${base}/redirect`);
     expect(result.title).toBe('Rendered by JS');
     expect(result.description).toBe('Integration page');
     expect(result.finalUrl).toBe(`${base}/page`);
     expect(result.httpStatus).toBe(200);
-    expect(result.screenshot.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+    expect(result.screenshot.subarray(1, 4).toString()).toBe('PNG');
   }, 30_000);
 
   it('refuses localhost when the SSRF guard is on', async () => {

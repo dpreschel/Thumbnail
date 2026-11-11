@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+const SIZE_NAME = /^[a-z][a-z0-9]{0,15}$/;
+
 export function createStore(dataDir) {
   const file = path.join(dataDir, 'sites.json');
   const thumbDir = path.join(dataDir, 'thumbnails');
@@ -35,7 +37,12 @@ export function createStore(dataDir) {
     return run;
   };
 
-  const thumbPath = (id) => path.join(thumbDir, `${id}.jpg`);
+  async function removeThumbs(id) {
+    const files = await fs.readdir(thumbDir).catch(() => []);
+    await Promise.all(
+      files.filter((f) => f.startsWith(`${id}`)).map((f) => fs.rm(path.join(thumbDir, f), { force: true })),
+    );
+  }
 
   return {
     thumbDir,
@@ -49,20 +56,29 @@ export function createStore(dataDir) {
       return (await load()).find((s) => s.id === id) ?? null;
     },
 
-    /** Insert, or update the existing record with the same canonical URL. */
-    upsert({ screenshot, ...fields }) {
+    /**
+     * Insert, or update the existing record with the same canonical URL.
+     * @param {object} input  record fields plus `images`: { sizeName: Buffer } or null
+     */
+    upsert({ images, ...fields }) {
       return exclusive(async () => {
         const sites = await load();
         const existing = sites.find((s) => s.url === fields.url);
         const id = existing?.id ?? crypto.randomUUID();
-        await fs.writeFile(thumbPath(id), screenshot);
-        const record = {
-          ...existing,
-          ...fields,
-          id,
-          thumbnail: `/thumbnails/${id}.jpg`,
-          capturedAt: new Date().toISOString(),
-        };
+
+        await removeThumbs(id); // sizes may have changed, or this capture has no image
+        let thumbnails = null;
+        if (images && Object.keys(images).length) {
+          thumbnails = {};
+          for (const [size, buf] of Object.entries(images)) {
+            if (!SIZE_NAME.test(size)) throw new Error(`Bad thumbnail size name "${size}"`);
+            await fs.writeFile(path.join(thumbDir, `${id}-${size}.jpg`), buf);
+            thumbnails[size] = `/thumbnails/${id}-${size}.jpg`;
+          }
+        }
+
+        const { thumbnail: _legacy, ...prev } = existing ?? {};
+        const record = { ...prev, ...fields, id, thumbnails, capturedAt: new Date().toISOString() };
         if (existing) sites[sites.indexOf(existing)] = record;
         else sites.push(record);
         await persist();
@@ -77,7 +93,7 @@ export function createStore(dataDir) {
         if (idx === -1) return false;
         sites.splice(idx, 1);
         await persist();
-        await fs.rm(thumbPath(id), { force: true });
+        await removeThumbs(id);
         return true;
       });
     },

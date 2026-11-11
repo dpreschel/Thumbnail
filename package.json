@@ -13,14 +13,18 @@
     "dev": "node --watch src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "browsers": "playwright install chromium"
+    "browsers": "playwright install chromium",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f thumbnailer"
   },
   "license": "MIT",
   "dependencies": {
     "cheerio": "^1.2.0",
     "express": "^4.22.3",
     "ipaddr.js": "^2.5.0",
-    "playwright": "^1.63.0"
+    "playwright": "1.63.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "supertest": "^7.3.2",

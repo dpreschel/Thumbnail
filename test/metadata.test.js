@@ -11,6 +11,7 @@ describe('extractMetadata', () => {
       description: 'A meta description.',
       url: 'https://example.com/canonical/page',
       siteName: 'Example Site',
+      image: 'https://example.com/img/share.png',
     });
   });
 
@@ -18,8 +19,15 @@ describe('extractMetadata', () => {
     const html = `<html><head><title>Hello</title>
       <meta property="og:description" content="from og"></head></html>`;
     expect(extractMetadata(html, 'https://a.test/')).toMatchObject({
-      title: 'Hello', description: 'from og', url: 'https://a.test/', siteName: null,
+      title: 'Hello', description: 'from og', url: 'https://a.test/', siteName: null, image: null,
     });
+  });
+
+  it('finds twitter:image when there is no og:image, and ignores data: images', () => {
+    expect(extractMetadata('<meta name="twitter:image" content="//cdn.a.test/x.jpg">', 'https://a.test/').image)
+      .toBe('https://cdn.a.test/x.jpg');
+    expect(extractMetadata('<meta property="og:image" content="data:image/png;base64,AAA">', 'https://a.test/').image)
+      .toBeNull();
   });
 
   it('uses og:url when there is no canonical', () => {

@@ -1,0 +1,17 @@
+services:
+  thumbnailer:
+    build: .
+    image: site-thumbnailer:latest
+    ports:
+      - "127.0.0.1:3000:3000"   # only reachable from this Mac; drop "127.0.0.1:" to expose on your LAN
+    environment:
+      THUMBNAIL_SIZES: ${THUMBNAIL_SIZES:-small:320,medium:640,large:1280}
+      # DISABLE_BROWSER: "1"    # metadata-only mode, no Chromium
+    volumes:
+      - thumbnailer-data:/data
+    init: true                  # reaps Chromium zombie processes
+    shm_size: 1gb               # Chromium crashes with Docker's default 64MB /dev/shm
+    restart: unless-stopped
+
+volumes:
+  thumbnailer-data:

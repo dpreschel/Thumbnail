@@ -14,3 +14,16 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t site-thumbnailer:ci .
+      - name: Smoke test container
+        run: |
+          docker run -d --name t -p 3000:3000 --init --shm-size=1g site-thumbnailer:ci
+          for i in $(seq 1 30); do curl -fs localhost:3000/healthz && break; sleep 1; done
+          curl -fs localhost:3000/api/config
+          docker rm -f t
