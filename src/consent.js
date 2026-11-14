@@ -70,7 +70,8 @@ async function tryClick(frame, selectors) {
 
 async function tryTextClick(frame, pattern) {
   try {
-    const buttons = frame.locator('button');
+    // Include <a> elements — some CMPs use links styled as buttons (e.g. CNN)
+    const buttons = frame.locator('button, [role="button"], a');
     const count = await buttons.count();
     for (let i = 0; i < count; i++) {
       try {
