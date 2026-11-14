@@ -55,11 +55,13 @@ export function createCapturer({ allowPrivateHosts = false, dismiss = true, laun
       const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
       if (!response) throw new Error('No response from site.');
 
+      // Give lazy content a moment, but don't wait forever on chatty sites.
+      // Consent banners often load via deferred scripts, so we wait for the
+      // network to settle before attempting dismissal.
+      await page.waitForLoadState('networkidle', { timeout: SETTLE_TIMEOUT_MS }).catch(() => {});
+
       // Layers 2 & 3: click dismiss/reject buttons and inject hide-CSS.
       if (dismiss) await dismissConsent(page);
-
-      // Give lazy content a moment, but don't wait forever on chatty sites.
-      await page.waitForLoadState('networkidle', { timeout: SETTLE_TIMEOUT_MS }).catch(() => {});
 
       const finalUrl = page.url();
       const html = await page.content();
