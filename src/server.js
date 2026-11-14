@@ -11,11 +11,12 @@ const HOST = process.env.HOST || '127.0.0.1';
 const DATA_DIR = path.resolve(process.env.DATA_DIR || 'data');
 const allowPrivateHosts = process.env.ALLOW_PRIVATE_HOSTS === '1';
 const useBrowser = process.env.DISABLE_BROWSER !== '1';
+const dismiss = process.env.DISMISS_CONSENT !== '0';
 const sizes = parseSizes(process.env.THUMBNAIL_SIZES);
 
 const store = createStore(DATA_DIR);
 const capturer = createSiteCapturer({
-  browser: useBrowser ? createCapturer({ allowPrivateHosts }) : null,
+  browser: useBrowser ? createCapturer({ allowPrivateHosts, dismiss }) : null,
   fallback: createFallback({ allowPrivateHosts }),
 });
 

@@ -3,12 +3,13 @@
 import { chromium } from 'playwright';
 import { assertPublicUrl } from './urlGuard.js';
 import { extractMetadata } from './metadata.js';
+import { CONSENT_HOSTS, dismissConsent } from './consent.js';
 
 const VIEWPORT = { width: 1280, height: 800 };
 const NAV_TIMEOUT_MS = 20_000;
 const SETTLE_TIMEOUT_MS = 4_000;
 
-export function createCapturer({ allowPrivateHosts = false, launchOptions = {} } = {}) {
+export function createCapturer({ allowPrivateHosts = false, dismiss = true, launchOptions = {} } = {}) {
   let browserPromise = null;
 
   const getBrowser = () => {
@@ -40,6 +41,10 @@ export function createCapturer({ allowPrivateHosts = false, launchOptions = {} }
           const reqUrl = route.request().url();
           if (!/^https?:/i.test(reqUrl)) return route.continue(); // data:, blob:
           const host = new URL(reqUrl).hostname;
+          // Block known consent-provider script hosts (Layer 1). This is an
+          // early abort that never touches assertPublicUrl — the SSRF guard
+          // below remains intact for every other host.
+          if (dismiss && CONSENT_HOSTS.has(host)) return route.abort('blockedbyclient');
           if (!verdicts.has(host)) {
             verdicts.set(host, assertPublicUrl(reqUrl).then(() => true, () => false));
           }
@@ -49,12 +54,16 @@ export function createCapturer({ allowPrivateHosts = false, launchOptions = {} }
 
       const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
       if (!response) throw new Error('No response from site.');
+
+      // Layers 2 & 3: click dismiss/reject buttons and inject hide-CSS.
+      if (dismiss) await dismissConsent(page);
+
       // Give lazy content a moment, but don't wait forever on chatty sites.
       await page.waitForLoadState('networkidle', { timeout: SETTLE_TIMEOUT_MS }).catch(() => {});
 
       const finalUrl = page.url();
       const html = await page.content();
-      const screenshot = await page.screenshot({ type: 'png' }) // lossless; resized to JPEG later;
+      const screenshot = await page.screenshot({ type: 'png' }); // lossless; resized to JPEG later
 
       return {
         ...extractMetadata(html, finalUrl),
