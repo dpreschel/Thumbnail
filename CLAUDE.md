@@ -67,3 +67,4 @@ If it graduates, the rough order is:
 
 - `README.md`: features, API, configuration
 - `docs/MAC_SETUP.md`: setup from a fresh Mac, plus troubleshooting
+- `docs/integration.md`: reusing the capture pipeline in another project, and prep work before lifting it
